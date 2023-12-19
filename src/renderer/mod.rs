@@ -55,7 +55,7 @@ impl Renderer {
                     self.state.update();
                     match self.state.render() {
                         Ok(_) => {}
-                        Err(wgpu::SurfaceError::Lost) => self.state.resize(self.state.size),
+                        Err(wgpu::SurfaceError::Lost) => self.state.resize(*self.state.size()),
                         Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                         Err(e) => eprintln!("{:?}", e),
                     }

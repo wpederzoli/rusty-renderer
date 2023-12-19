@@ -6,7 +6,7 @@ pub struct State {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
+    size: winit::dpi::PhysicalSize<u32>,
     window: Window,
 }
 
@@ -79,6 +79,10 @@ impl State {
 
     pub fn window(&self) -> &Window {
         &self.window
+    }
+
+    pub fn size(&self) -> &winit::dpi::PhysicalSize<u32> {
+        &self.size
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {

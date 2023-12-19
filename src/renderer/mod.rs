@@ -1,40 +1,50 @@
 use winit::{
-    error::EventLoopError,
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
 
-pub struct RendererWindow {
+use self::renderer::State;
+mod renderer;
+
+pub struct Renderer {
     event_loop: EventLoop<()>,
-    window: Window,
+    state: State,
 }
 
-impl RendererWindow {
-    pub fn new() -> Result<Self, EventLoopError> {
-        let event_loop = EventLoop::new().unwrap();
-        let window = WindowBuilder::new().build(&event_loop).unwrap();
+impl Renderer {
+    pub fn new(title: &str) -> Self {
+        let event_loop = EventLoop::new();
+        let window = WindowBuilder::new()
+            .with_title(title)
+            .build(&event_loop)
+            .unwrap();
 
-        event_loop.set_control_flow(ControlFlow::Poll);
+        let state = pollster::block_on(State::new(window));
 
-        Ok(RendererWindow { event_loop, window })
+        Renderer { event_loop, state }
     }
 
     pub fn run(self) {
         self.event_loop
-            .run(move |event, elwt| match event {
+            .run(move |event, _, control_flow| match event {
                 Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    println!("Close");
-                    elwt.exit();
-                }
-                Event::AboutToWait => {
-                    self.window.request_redraw();
-                }
-                _ => (),
-            })
-            .unwrap()
+                    ref event,
+                    window_id,
+                } if window_id == self.state.window().id() => match event {
+                    WindowEvent::CloseRequested
+                    | WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                state: ElementState::Pressed,
+                                virtual_keycode: Some(VirtualKeyCode::Escape),
+                                ..
+                            },
+                        ..
+                    } => *control_flow = ControlFlow::Exit,
+                    _ => {}
+                },
+                _ => {}
+            });
     }
 }

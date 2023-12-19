@@ -1,6 +1,7 @@
 mod renderer;
 
 fn main() {
-    let renderer = renderer::RendererWindow::new().unwrap();
+    env_logger::init();
+    let renderer = renderer::Renderer::new("Rusty Renderer");
     renderer.run();
 }

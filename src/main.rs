@@ -1,4 +1,4 @@
-mod renderer;
+use ::renderer::prelude::*;
 
 fn main() {
     env_logger::init();

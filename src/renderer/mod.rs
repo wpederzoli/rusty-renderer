@@ -1,7 +1,7 @@
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    window::WindowBuilder,
 };
 
 use self::renderer::State;
@@ -25,25 +25,45 @@ impl Renderer {
         Renderer { event_loop, state }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         self.event_loop
             .run(move |event, _, control_flow| match event {
                 Event::WindowEvent {
                     ref event,
                     window_id,
-                } if window_id == self.state.window().id() => match event {
-                    WindowEvent::CloseRequested
-                    | WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                state: ElementState::Pressed,
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
+                } if window_id == self.state.window().id() => {
+                    if !self.state.input(event) {
+                        match event {
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                input:
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                                        ..
+                                    },
                                 ..
-                            },
-                        ..
-                    } => *control_flow = ControlFlow::Exit,
-                    _ => {}
-                },
+                            } => *control_flow = ControlFlow::Exit,
+                            WindowEvent::Resized(physical_size) => {
+                                self.state.resize(*physical_size);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                Event::RedrawRequested(window_id) if window_id == self.state.window().id() => {
+                    self.state.update();
+                    match self.state.render() {
+                        Ok(_) => {}
+                        Err(wgpu::SurfaceError::Lost) => self.state.resize(*self.state.size()),
+                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                }
+                Event::MainEventsCleared => {
+                    self.state.window().request_redraw();
+                }
+
                 _ => {}
             });
     }
